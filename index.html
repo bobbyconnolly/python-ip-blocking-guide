@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Implementing IP Blocking in Flask</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: #f6f8fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffeeba;
+            padding: 12px;
+            margin: 16px 0;
+        }
+        h2 {
+            margin-top: 32px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eaecef;
+        }
+        .checklist {
+            background-color: #f8f9fa;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        .checklist h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Implementing IP Blocking in Flask APIs</h1>
+    
+    <p>This guide shows you how to implement IP blocking functionality in your Flask API using a middleware decorator. This implementation allows you to selectively block requests based on their source IP address.</p>
+
+    <h2>Implementation Steps</h2>
+
+    <h3>1. Add Required Imports</h3>
+    <p>First, ensure you have these imports at the top of your Flask application:</p>
+    <pre>from functools import wraps
+from flask import request, jsonify</pre>
+
+    <h3>2. Create the IP Blocking Middleware</h3>
+    <p>Add this middleware decorator to your Flask application:</p>
+    <pre>BLOCKED_IPS = {'127.0.0.1'}  # Add IPs you want to block
+
+def check_ip(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if request.remote_addr in BLOCKED_IPS:
+            return jsonify({'error': 'blocked'}), 403
+        return f(*args, **kwargs)
+    return wrapper</pre>
+
+    <h3>3. Apply the Middleware</h3>
+    <p>Add the decorator to your route(s). Here's an example:</p>
+    <pre>@app.route('/api/your-endpoint', methods=['GET'])
+@check_ip
+def your_route():
+    # Your normal route code here
+    return jsonify({'data': 'your response'})</pre>
+
+    <h2>Testing Your Implementation</h2>
+    
+    <h3>Test Scenario Setup</h3>
+    <ol>
+        <li>Add your local IP (127.0.0.1) to the <code>BLOCKED_IPS</code> set</li>
+        <li>Try accessing your API endpoint</li>
+        <li>You should receive a 403 error with a "blocked" message</li>
+        <li>Remove your IP from <code>BLOCKED_IPS</code> to restore access</li>
+    </ol>
+
+    <div class="warning">
+        <strong>Important:</strong> Make sure you don't accidentally leave your own IP blocked when testing. Always keep a way to unblock IPs in your implementation.
+    </div>
+
+    <h2>Understanding the Code</h2>
+    
+    <p>Let's break down how the middleware works:</p>
+    <ul>
+        <li><code>BLOCKED_IPS</code> is a set containing IP addresses that should be blocked</li>
+        <li><code>request.remote_addr</code> gives us the IP address of the incoming request</li>
+        <li>The <code>@wraps(f)</code> decorator preserves the original function's metadata</li>
+        <li>If the IP is blocked, we return a 403 Forbidden response</li>
+        <li>If the IP is allowed, the request continues to your normal route handler</li>
+    </ul>
+
+    <div class="checklist">
+        <h3>Implementation Checklist ✅</h3>
+        <ol>
+            <li>Added required imports</li>
+            <li>Implemented <code>check_ip</code> middleware</li>
+            <li>Created <code>BLOCKED_IPS</code> set</li>
+            <li>Applied <code>@check_ip</code> decorator to routes</li>
+            <li>Tested blocking with local IP</li>
+            <li>Verified 403 response for blocked IPs</li>
+            <li>Confirmed normal operation for non-blocked IPs</li>
+        </ol>
+    </div>
+
+    <h2>Common Issues</h2>
+    <ul>
+        <li>If your decorator isn't working, make sure you've added <code>@wraps(f)</code></li>
+        <li>Ensure the decorator is placed <em>below</em> the route decorator (<code>@app.route</code>)</li>
+        <li>Verify that <code>request.remote_addr</code> is giving you the expected IP address</li>
+        <li>Check that your <code>BLOCKED_IPS</code> set contains strings, not bytes or integers</li>
+    </ul>
+</body>
+</html>
